@@ -1,5 +1,6 @@
 package de.maximilianbrandau.intercom.server;
 
+import de.maximilianbrandau.intercom.AlreadyClosedException;
 import de.maximilianbrandau.intercom.AuthenticationHandler;
 import de.maximilianbrandau.intercom.encoding.EncodingMechanism;
 import de.maximilianbrandau.intercom.encoding.net.IntercomDecoder;
@@ -29,7 +30,9 @@ public class IntercomServer<T> {
     private final Channel channel;
     private EventLoopGroup bossGroup, workerGroup;
 
-    public IntercomServer(String host, int port, boolean ssl, AuthenticationHandler authenticationHandler, EncodingMechanism<T> encodingMechanism) throws SSLException, CertificateException {
+    private boolean closed = false;
+
+    private IntercomServer(String host, int port, boolean ssl, AuthenticationHandler authenticationHandler, EncodingMechanism<T> encodingMechanism) throws SSLException, CertificateException {
         this.authenticationHandler = authenticationHandler;
         this.encodingMechanism = encodingMechanism;
 
@@ -79,13 +82,20 @@ public class IntercomServer<T> {
     }
 
     public void close() {
+        if (isClosed()) throw new AlreadyClosedException("Server");
         if (this.channelFuture != null)
             this.channelFuture.channel().close().channel().closeFuture();
         this.bossGroup.shutdownGracefully();
         this.workerGroup.shutdownGracefully();
+        this.closed = true;
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 
     public void push(String event) {
+        if (isClosed()) throw new AlreadyClosedException("Server");
         this.channel.writeAndFlush(new PushPacket(event));
     }
 

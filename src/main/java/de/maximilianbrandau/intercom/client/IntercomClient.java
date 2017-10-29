@@ -1,5 +1,6 @@
 package de.maximilianbrandau.intercom.client;
 
+import de.maximilianbrandau.intercom.AlreadyClosedException;
 import de.maximilianbrandau.intercom.encoding.EncodingMechanism;
 import de.maximilianbrandau.intercom.encoding.net.IntercomDecoder;
 import de.maximilianbrandau.intercom.encoding.net.IntercomEncoder;
@@ -25,20 +26,20 @@ public class IntercomClient<T> {
 
     private static final long RECONNECT_DELAY = 5000;
 
-    protected final EventLoopGroup eventLoopGroup;
-    protected final HashMap<String, SentRequest<T>> sentRequests;
-    protected final EncodingMechanism<T> encodingMechanism;
+    final EventLoopGroup eventLoopGroup;
+    final HashMap<String, SentRequest<T>> sentRequests;
+    final EncodingMechanism<T> encodingMechanism;
     private final long requestTimeout;
     private final Bootstrap bootstrap;
     private final String host;
     private final int port;
-    protected int ping = -1;
+    int ping = -1;
     private ChannelFuture channelFuture;
     private Channel channel;
     private boolean closed = false;
     private long requestId = Long.MIN_VALUE;
 
-    public IntercomClient(String host, int port, boolean ssl, long requestTimeout, EncodingMechanism<T> encodingMechanism) throws SSLException {
+    private IntercomClient(String host, int port, boolean ssl, long requestTimeout, EncodingMechanism<T> encodingMechanism) throws SSLException {
         this.host = host;
         this.port = port;
         this.requestTimeout = requestTimeout;
@@ -92,6 +93,7 @@ public class IntercomClient<T> {
     }
 
     public void close() {
+        if (isClosed()) throw new AlreadyClosedException("Client");
         if (channelFuture != null)
             try {
                 channelFuture.channel().close().channel().closeFuture().sync();
@@ -107,12 +109,14 @@ public class IntercomClient<T> {
     }
 
     public void authenticate() {
-
+        if (isClosed()) throw new AlreadyClosedException("Client");
+        // TODO: Add authentication implemenation
     }
 
-    public void request(String event, T data, IntercomResponseHandler<T> responseHandler) {
+    void request(String event, T data, IntercomResponseHandler<T> responseHandler) {
+        if (isClosed()) throw new AlreadyClosedException("Client");
         long startTime = System.currentTimeMillis();
-        String requestId = String.valueOf(this.requestId++);
+        String requestId = requestId();
 
         ByteBuf dataBuffer = Unpooled.buffer();
         this.encodingMechanism.encode(data, dataBuffer);
@@ -132,13 +136,27 @@ public class IntercomClient<T> {
         this.sentRequests.put(requestId, sentRequest);
     }
 
+    String requestId() {
+        return String.valueOf(this.requestId++);
+    }
+
+    public IntercomRequest.Builder<T> request(String event) {
+        if (isClosed()) throw new AlreadyClosedException("Client");
+        return new IntercomRequest.Builder<>(this, event, this.channel);
+    }
+
     public int getPing() {
         return ping;
     }
 
-    protected void ping() {
-        if (IntercomClient.this.channel != null)
-            IntercomClient.this.channel.writeAndFlush(new PingPacket(System.currentTimeMillis(), ping));
+    void ping() {
+        if (isClosed()) throw new AlreadyClosedException("Client");
+        if (this.channel != null)
+            this.channel.writeAndFlush(new PingPacket(System.currentTimeMillis(), ping));
+    }
+
+    public long getRequestTimeout() {
+        return requestTimeout;
     }
 
     public static class Builder {
