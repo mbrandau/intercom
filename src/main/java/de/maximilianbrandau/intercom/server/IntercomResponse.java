@@ -1,7 +1,7 @@
 package de.maximilianbrandau.intercom.server;
 
-import de.maximilianbrandau.intercom.encoding.net.packets.ResponsePacket;
-import io.netty.buffer.ByteBuf;
+import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
+import de.maximilianbrandau.intercom.codec.packets.ResponsePacket;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -40,7 +40,7 @@ public class IntercomResponse<T> {
     }
 
     public void end() {
-        ByteBuf dataBuffer = Unpooled.buffer();
+        IntercomByteBuf dataBuffer = new IntercomByteBuf(Unpooled.buffer());
         this.server.encodingMechanism.encode(getData(), dataBuffer);
         ctx.writeAndFlush(new ResponsePacket(getRequest().getRequestId(), status, dataBuffer));
     }

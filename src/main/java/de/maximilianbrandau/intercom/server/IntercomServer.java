@@ -2,15 +2,15 @@ package de.maximilianbrandau.intercom.server;
 
 import de.maximilianbrandau.intercom.AlreadyClosedException;
 import de.maximilianbrandau.intercom.AuthenticationHandler;
-import de.maximilianbrandau.intercom.encoding.EncodingMechanism;
-import de.maximilianbrandau.intercom.encoding.net.IntercomDecoder;
-import de.maximilianbrandau.intercom.encoding.net.IntercomEncoder;
-import de.maximilianbrandau.intercom.encoding.net.packets.PushPacket;
+import de.maximilianbrandau.intercom.codec.EncodingMechanism;
+import de.maximilianbrandau.intercom.codec.IntercomDecoder;
+import de.maximilianbrandau.intercom.codec.IntercomEncoder;
+import de.maximilianbrandau.intercom.codec.packets.PushPacket;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
@@ -44,14 +44,14 @@ public class IntercomServer<T> {
             sslCtx = null;
         }
 
-        this.bossGroup = new NioEventLoopGroup(1);
-        this.workerGroup = new NioEventLoopGroup();
+        this.bossGroup = new EpollEventLoopGroup(1);
+        this.workerGroup = new EpollEventLoopGroup();
 
         this.requestHandlers = new HashMap<>();
 
         ServerBootstrap b = new ServerBootstrap();
         b.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
+                .channel(EpollServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 100)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
@@ -61,9 +61,9 @@ public class IntercomServer<T> {
                             p.addLast(sslCtx.newHandler(ch.alloc()));
                         }
 
-                        p.addLast(new IntercomDecoder());
-                        p.addLast(new IntercomEncoder());
-                        p.addLast(new IntercomServerHandler<>(IntercomServer.this));
+                        p.addLast("decoder", new IntercomDecoder());
+                        p.addLast("encoder", new IntercomEncoder());
+                        p.addLast("handler", new IntercomServerHandler<>(IntercomServer.this));
                     }
                 });
 

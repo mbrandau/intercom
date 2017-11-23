@@ -1,8 +1,8 @@
-package de.maximilianbrandau.intercom.encoding;
+package de.maximilianbrandau.intercom.codec;
 
 import io.netty.buffer.ByteBuf;
 
-public interface EncodingMechanism<T> {
+public interface AuthenticationEncodingMechanism<T> {
 
     void encode(T data, ByteBuf buffer);
 

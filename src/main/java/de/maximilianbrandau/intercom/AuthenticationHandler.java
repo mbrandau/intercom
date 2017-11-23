@@ -1,6 +1,6 @@
 package de.maximilianbrandau.intercom;
 
-import de.maximilianbrandau.intercom.encoding.AuthenticationEncodingMechanism;
+import de.maximilianbrandau.intercom.codec.AuthenticationEncodingMechanism;
 
 public interface AuthenticationHandler<T> extends AuthenticationEncodingMechanism<T> {
 

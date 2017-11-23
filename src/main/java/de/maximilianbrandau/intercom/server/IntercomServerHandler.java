@@ -1,9 +1,9 @@
 package de.maximilianbrandau.intercom.server;
 
 import de.maximilianbrandau.intercom.AuthenticationHandler;
-import de.maximilianbrandau.intercom.encoding.net.packets.AuthPacket;
-import de.maximilianbrandau.intercom.encoding.net.packets.PingPacket;
-import de.maximilianbrandau.intercom.encoding.net.packets.RequestPacket;
+import de.maximilianbrandau.intercom.codec.packets.AuthPacket;
+import de.maximilianbrandau.intercom.codec.packets.PingPacket;
+import de.maximilianbrandau.intercom.codec.packets.RequestPacket;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;

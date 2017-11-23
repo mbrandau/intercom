@@ -1,8 +1,8 @@
 package de.maximilianbrandau.intercom.client;
 
 import de.maximilianbrandau.intercom.Handler;
-import de.maximilianbrandau.intercom.encoding.net.packets.RequestPacket;
-import io.netty.buffer.ByteBuf;
+import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
+import de.maximilianbrandau.intercom.codec.packets.RequestPacket;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.util.concurrent.ScheduledFuture;
@@ -39,7 +39,7 @@ public class IntercomRequest<T> {
             }
         }, requestTimeout, TimeUnit.MILLISECONDS);
 
-        ByteBuf dataBuffer = Unpooled.buffer();
+        IntercomByteBuf dataBuffer = new IntercomByteBuf(Unpooled.buffer());
         this.client.encodingMechanism.encode(data, dataBuffer);
 
         RequestPacket packet = new RequestPacket(requestId, event, dataBuffer);

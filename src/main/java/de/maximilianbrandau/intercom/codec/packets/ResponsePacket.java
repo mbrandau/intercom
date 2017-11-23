@@ -1,17 +1,16 @@
-package de.maximilianbrandau.intercom.encoding.net.packets;
+package de.maximilianbrandau.intercom.codec.packets;
 
-import de.maximilianbrandau.intercom.encoding.net.ByteBufUtil;
-import de.maximilianbrandau.intercom.encoding.net.IntercomPacket;
-import de.maximilianbrandau.intercom.encoding.net.PacketType;
-import io.netty.buffer.ByteBuf;
+import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
+import de.maximilianbrandau.intercom.codec.IntercomPacket;
+import de.maximilianbrandau.intercom.codec.PacketType;
 
 public class ResponsePacket extends IntercomPacket {
 
     private String requestId;
     private short status;
-    private ByteBuf data;
+    private IntercomByteBuf data;
 
-    public ResponsePacket(String requestId, short status, ByteBuf data) {
+    public ResponsePacket(String requestId, short status, IntercomByteBuf data) {
         this.requestId = requestId;
         this.status = status;
         this.data = data;
@@ -28,7 +27,7 @@ public class ResponsePacket extends IntercomPacket {
         return status;
     }
 
-    public ByteBuf getData() {
+    public IntercomByteBuf getData() {
         return data;
     }
 
@@ -38,18 +37,18 @@ public class ResponsePacket extends IntercomPacket {
     }
 
     @Override
-    public void encode(ByteBuf byteBuffer) {
-        ByteBufUtil.writeUtf8(requestId, byteBuffer);
+    public void encode(IntercomByteBuf byteBuffer) {
+        byteBuffer.writeUtf8(requestId);
         byteBuffer.writeShort(status);
         byteBuffer.writeInt(data.writerIndex());
         byteBuffer.writeBytes(data);
     }
 
     @Override
-    public void decode(ByteBuf byteBuffer) {
-        requestId = ByteBufUtil.readUtf8(byteBuffer);
+    public void decode(IntercomByteBuf byteBuffer) {
+        requestId = byteBuffer.readUtf8();
         status = byteBuffer.readShort();
-        data = byteBuffer.readRetainedSlice(byteBuffer.readInt());
+        data = new IntercomByteBuf(byteBuffer.readRetainedSlice(byteBuffer.readInt()));
     }
 
 }

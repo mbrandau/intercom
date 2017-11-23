@@ -1,9 +1,9 @@
 package de.maximilianbrandau.intercom.client;
 
-import de.maximilianbrandau.intercom.encoding.net.packets.AuthResponsePacket;
-import de.maximilianbrandau.intercom.encoding.net.packets.PingPacket;
-import de.maximilianbrandau.intercom.encoding.net.packets.PushPacket;
-import de.maximilianbrandau.intercom.encoding.net.packets.ResponsePacket;
+import de.maximilianbrandau.intercom.codec.packets.AuthResponsePacket;
+import de.maximilianbrandau.intercom.codec.packets.PingPacket;
+import de.maximilianbrandau.intercom.codec.packets.PushPacket;
+import de.maximilianbrandau.intercom.codec.packets.ResponsePacket;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 

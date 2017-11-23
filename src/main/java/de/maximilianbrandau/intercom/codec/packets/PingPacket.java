@@ -1,8 +1,8 @@
-package de.maximilianbrandau.intercom.encoding.net.packets;
+package de.maximilianbrandau.intercom.codec.packets;
 
-import de.maximilianbrandau.intercom.encoding.net.IntercomPacket;
-import de.maximilianbrandau.intercom.encoding.net.PacketType;
-import io.netty.buffer.ByteBuf;
+import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
+import de.maximilianbrandau.intercom.codec.IntercomPacket;
+import de.maximilianbrandau.intercom.codec.PacketType;
 
 public class PingPacket extends IntercomPacket {
 
@@ -31,15 +31,15 @@ public class PingPacket extends IntercomPacket {
     }
 
     @Override
-    public void encode(ByteBuf byteBuffer) {
+    public void encode(IntercomByteBuf byteBuffer) {
         byteBuffer.writeLong(startTime);
-        byteBuffer.writeInt(lastPing);
+        byteBuffer.writeVarInt(lastPing);
     }
 
     @Override
-    public void decode(ByteBuf byteBuffer) {
+    public void decode(IntercomByteBuf byteBuffer) {
         startTime = byteBuffer.readLong();
-        lastPing = byteBuffer.readInt();
+        lastPing = byteBuffer.readVarInt();
     }
 
 }

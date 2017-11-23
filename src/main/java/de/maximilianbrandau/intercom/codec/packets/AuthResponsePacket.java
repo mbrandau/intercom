@@ -1,7 +1,8 @@
-package de.maximilianbrandau.intercom.encoding.net.packets;
+package de.maximilianbrandau.intercom.codec.packets;
 
-import de.maximilianbrandau.intercom.encoding.net.IntercomPacket;
-import de.maximilianbrandau.intercom.encoding.net.PacketType;
+import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
+import de.maximilianbrandau.intercom.codec.IntercomPacket;
+import de.maximilianbrandau.intercom.codec.PacketType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -27,13 +28,13 @@ public class AuthResponsePacket extends IntercomPacket {
     }
 
     @Override
-    public void encode(ByteBuf byteBuffer) {
+    public void encode(IntercomByteBuf byteBuffer) {
         byteBuffer.writeInt(buffer.writerIndex());
         byteBuffer.writeBytes(buffer);
     }
 
     @Override
-    public void decode(ByteBuf byteBuffer) {
+    public void decode(IntercomByteBuf byteBuffer) {
         buffer.readBytes(byteBuffer, byteBuffer.readInt());
     }
 

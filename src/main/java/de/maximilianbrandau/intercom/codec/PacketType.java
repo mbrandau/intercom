@@ -1,4 +1,4 @@
-package de.maximilianbrandau.intercom.encoding.net;
+package de.maximilianbrandau.intercom.codec;
 
 public enum PacketType {
 

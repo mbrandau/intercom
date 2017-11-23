@@ -1,18 +1,18 @@
 package de.maximilianbrandau.intercom.client;
 
 import de.maximilianbrandau.intercom.AlreadyClosedException;
-import de.maximilianbrandau.intercom.encoding.EncodingMechanism;
-import de.maximilianbrandau.intercom.encoding.net.IntercomDecoder;
-import de.maximilianbrandau.intercom.encoding.net.IntercomEncoder;
-import de.maximilianbrandau.intercom.encoding.net.packets.PingPacket;
-import de.maximilianbrandau.intercom.encoding.net.packets.RequestPacket;
+import de.maximilianbrandau.intercom.codec.EncodingMechanism;
+import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
+import de.maximilianbrandau.intercom.codec.IntercomDecoder;
+import de.maximilianbrandau.intercom.codec.IntercomEncoder;
+import de.maximilianbrandau.intercom.codec.packets.PingPacket;
+import de.maximilianbrandau.intercom.codec.packets.RequestPacket;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -56,10 +56,10 @@ public class IntercomClient<T> {
         this.sentRequests = new HashMap<>();
 
         // Configure the client.
-        this.eventLoopGroup = new NioEventLoopGroup();
+        this.eventLoopGroup = new EpollEventLoopGroup();
         this.bootstrap = new Bootstrap();
         this.bootstrap.group(eventLoopGroup)
-                .channel(NioSocketChannel.class)
+                .channel(EpollSocketChannel.class)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .handler(new ChannelInitializer<SocketChannel>() {
@@ -70,9 +70,9 @@ public class IntercomClient<T> {
                             p.addLast(sslCtx.newHandler(ch.alloc(), host, port));
                         }
 
-                        p.addLast(new IntercomDecoder());
-                        p.addLast(new IntercomEncoder());
-                        p.addLast(new IntercomClientHandler<>(IntercomClient.this));
+                        p.addLast("decoder", new IntercomDecoder());
+                        p.addLast("encoder", new IntercomEncoder());
+                        p.addLast("handler", new IntercomClientHandler<>(IntercomClient.this));
                     }
                 });
         connect();
@@ -118,7 +118,7 @@ public class IntercomClient<T> {
         long startTime = System.currentTimeMillis();
         String requestId = requestId();
 
-        ByteBuf dataBuffer = Unpooled.buffer();
+        IntercomByteBuf dataBuffer = new IntercomByteBuf(Unpooled.buffer());
         this.encodingMechanism.encode(data, dataBuffer);
 
         RequestPacket packet = new RequestPacket(requestId, event, dataBuffer);

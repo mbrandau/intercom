@@ -1,6 +1,6 @@
-package de.maximilianbrandau.intercom.encoding.net;
+package de.maximilianbrandau.intercom.codec;
 
-import de.maximilianbrandau.intercom.encoding.net.packets.*;
+import de.maximilianbrandau.intercom.codec.packets.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ReplayingDecoder;
@@ -36,7 +36,7 @@ public class IntercomDecoder extends ReplayingDecoder<Void> {
                 break;
         }
 
-        packet.decode(data);
+        packet.decode(new IntercomByteBuf(data));
 
         return packet;
     }
