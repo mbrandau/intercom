@@ -2,20 +2,22 @@ package de.maximilianbrandau.intercom.client;
 
 import io.netty.util.concurrent.ScheduledFuture;
 
+import java.util.concurrent.CompletableFuture;
+
 public class SentRequest<T> {
 
     private final long startTime;
     private final String requestId;
     private final T data;
-    private final ScheduledFuture future;
-    private final IntercomResponseHandler<T> responseHandler;
+    private final ScheduledFuture timeoutFuture;
+    private final CompletableFuture<IntercomResponse<T>> future;
 
-    SentRequest(long startTime, String requestId, T data, ScheduledFuture future, IntercomResponseHandler<T> responseHandler) {
+    SentRequest(long startTime, String requestId, T data, ScheduledFuture timeoutFuture, CompletableFuture<IntercomResponse<T>> future) {
         this.startTime = startTime;
         this.requestId = requestId;
         this.data = data;
+        this.timeoutFuture = timeoutFuture;
         this.future = future;
-        this.responseHandler = responseHandler;
     }
 
     public long getStartTime() {
@@ -30,11 +32,12 @@ public class SentRequest<T> {
         return data;
     }
 
-    public ScheduledFuture getFuture() {
+    ScheduledFuture getTimeoutFuture() {
+        return timeoutFuture;
+    }
+
+    public CompletableFuture<IntercomResponse<T>> getFuture() {
         return future;
     }
 
-    public IntercomResponseHandler<T> getResponseHandler() {
-        return responseHandler;
-    }
 }

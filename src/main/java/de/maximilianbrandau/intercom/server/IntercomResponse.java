@@ -41,7 +41,7 @@ public class IntercomResponse<T> {
 
     public void end() {
         IntercomByteBuf dataBuffer = new IntercomByteBuf(Unpooled.buffer());
-        this.server.encodingMechanism.encode(getData(), dataBuffer);
+        this.server.intercomCodec.encode(getData(), dataBuffer);
         ctx.writeAndFlush(new ResponsePacket(getRequest().getRequestId(), status, dataBuffer));
     }
 

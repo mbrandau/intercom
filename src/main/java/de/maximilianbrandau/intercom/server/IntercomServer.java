@@ -2,9 +2,8 @@ package de.maximilianbrandau.intercom.server;
 
 import de.maximilianbrandau.intercom.AlreadyClosedException;
 import de.maximilianbrandau.intercom.AuthenticationHandler;
-import de.maximilianbrandau.intercom.codec.EncodingMechanism;
-import de.maximilianbrandau.intercom.codec.IntercomDecoder;
-import de.maximilianbrandau.intercom.codec.IntercomEncoder;
+import de.maximilianbrandau.intercom.codec.IntercomCodec;
+import de.maximilianbrandau.intercom.codec.NettyCodec;
 import de.maximilianbrandau.intercom.codec.packets.PushPacket;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -25,16 +24,16 @@ public class IntercomServer<T> {
 
     final AuthenticationHandler authenticationHandler;
 
-    final EncodingMechanism<T> encodingMechanism;
+    final IntercomCodec<T> intercomCodec;
     private final ChannelFuture channelFuture;
     private final Channel channel;
     private EventLoopGroup bossGroup, workerGroup;
 
     private boolean closed = false;
 
-    private IntercomServer(String host, int port, boolean ssl, AuthenticationHandler authenticationHandler, EncodingMechanism<T> encodingMechanism) throws SSLException, CertificateException {
+    private IntercomServer(String host, int port, boolean ssl, AuthenticationHandler authenticationHandler, IntercomCodec<T> intercomCodec) throws SSLException, CertificateException {
         this.authenticationHandler = authenticationHandler;
-        this.encodingMechanism = encodingMechanism;
+        this.intercomCodec = intercomCodec;
 
         final SslContext sslCtx;
         if (ssl) {
@@ -55,14 +54,13 @@ public class IntercomServer<T> {
                 .option(ChannelOption.SO_BACKLOG, 100)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
-                    public void initChannel(SocketChannel ch) throws Exception {
+                    public void initChannel(SocketChannel ch) {
                         ChannelPipeline p = ch.pipeline();
                         if (sslCtx != null) {
                             p.addLast(sslCtx.newHandler(ch.alloc()));
                         }
 
-                        p.addLast("decoder", new IntercomDecoder());
-                        p.addLast("encoder", new IntercomEncoder());
+                        p.addLast("codec", new NettyCodec());
                         p.addLast("handler", new IntercomServerHandler<>(IntercomServer.this));
                     }
                 });
@@ -134,8 +132,8 @@ public class IntercomServer<T> {
             return this;
         }
 
-        public <T> IntercomServer<T> build(EncodingMechanism<T> encodingMechanism) throws SSLException, CertificateException {
-            return new IntercomServer<>(host, port, ssl, authenticationHandler, encodingMechanism);
+        public <T> IntercomServer<T> build(IntercomCodec<T> intercomCodec) throws SSLException, CertificateException {
+            return new IntercomServer<>(host, port, ssl, authenticationHandler, intercomCodec);
         }
 
     }

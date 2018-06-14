@@ -25,11 +25,11 @@ public class ByteBufTest {
                 Integer.MAX_VALUE
         };
         IntercomByteBuf byteBuf = new IntercomByteBuf(Unpooled.buffer(5));
-        for (int i = 0; i < a.length; i++) {
+        for (int anA : a) {
             byteBuf.resetWriterIndex();
             byteBuf.resetReaderIndex();
-            byteBuf.writeVarInt(a[i]);
-            Assert.assertEquals(a[i], byteBuf.readVarInt());
+            byteBuf.writeVarInt(anA);
+            Assert.assertEquals(anA, byteBuf.readVarInt());
         }
     }
 
@@ -43,7 +43,7 @@ public class ByteBufTest {
         byteBuf.resetWriterIndex();
         byteBuf.resetReaderIndex();
         byteBuf.writeUtf8(null);
-        Assert.assertEquals(null, byteBuf.readUtf8());
+        Assert.assertNull(byteBuf.readUtf8());
     }
 
 }

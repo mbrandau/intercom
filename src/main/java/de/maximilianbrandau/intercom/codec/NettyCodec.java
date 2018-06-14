@@ -2,12 +2,13 @@ package de.maximilianbrandau.intercom.codec;
 
 import de.maximilianbrandau.intercom.codec.packets.*;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ReplayingDecoder;
+import io.netty.handler.codec.ByteToMessageCodec;
 
 import java.util.List;
 
-public class IntercomDecoder extends ReplayingDecoder<Void> {
+public class NettyCodec extends ByteToMessageCodec<IntercomPacket> {
 
     private static IntercomPacket decode(ByteBuf byteBuffer) {
         PacketType packetType = PacketType.getById(byteBuffer.readByte());
@@ -42,8 +43,17 @@ public class IntercomDecoder extends ReplayingDecoder<Void> {
     }
 
     @Override
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-        list.add(decode(byteBuf));
+    protected void encode(ChannelHandlerContext channelHandlerContext, IntercomPacket intercomPacket, ByteBuf byteBuf) {
+        ByteBuf dataBuffer = Unpooled.buffer();
+        intercomPacket.encode(new IntercomByteBuf(dataBuffer));
+
+        byteBuf.writeByte(intercomPacket.getPacketType().getId());
+        byteBuf.writeInt(dataBuffer.writerIndex());
+        byteBuf.writeBytes(dataBuffer);
     }
 
+    @Override
+    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
+        list.add(decode(byteBuf));
+    }
 }

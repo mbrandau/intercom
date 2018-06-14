@@ -20,11 +20,11 @@ public class IntercomServerHandler<T> extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         try {
             if (msg instanceof PingPacket) {
                 ctx.writeAndFlush(msg);
@@ -47,13 +47,14 @@ public class IntercomServerHandler<T> extends ChannelInboundHandlerAdapter {
                             this.authenticated,
                             packet.getRequestId(),
                             packet.getEvent(),
-                            this.server.encodingMechanism.decode(packet.getData())
+                            this.server.intercomCodec.decode(packet.getData())
                     );
                     IntercomResponse<T> response = new IntercomResponse<>(this.server, ctx, request);
 
                     handler.handleRequest(request, response);
+                } else {
+                    // TODO: Handle invalid events
                 }
-                return;
             }
         } finally {
             // Releasing the data
@@ -62,12 +63,12 @@ public class IntercomServerHandler<T> extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) {
     }
 }

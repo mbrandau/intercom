@@ -20,21 +20,20 @@ public class IntercomClientHandler<T> extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) {
         // Start pinging
         this.client.ping();
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         long receiveTime = System.currentTimeMillis();
         if (msg instanceof AuthResponsePacket) {
 
         }
         if (msg instanceof PingPacket) { // Pong
-            int ping = (int) (System.currentTimeMillis() - ((PingPacket) msg).getStartTime());
             // Set ping property
-            this.client.ping = ping;
+            this.client.ping = (int) (System.currentTimeMillis() - ((PingPacket) msg).getStartTime());
             // Schedule next ping
             this.client.eventLoopGroup.schedule(this.client::ping, PING_DELAY, TimeUnit.MILLISECONDS);
         }
@@ -46,13 +45,13 @@ public class IntercomClientHandler<T> extends ChannelInboundHandlerAdapter {
                     IntercomResponse<T> response = new IntercomResponse<>(
                             packet.getStatus(),
                             receiveTime - sentRequest.getStartTime(),
-                            this.client.encodingMechanism.decode(packet.getData())
+                            this.client.intercomCodec.decode(packet.getData())
                     );
-                    sentRequest.getResponseHandler().handleResponse(response);
+                    sentRequest.getFuture().complete(response);
                 } catch (Throwable t) {
-                    sentRequest.getResponseHandler().handleError(t);
+                    sentRequest.getFuture().completeExceptionally(t);
                 } finally {
-                    sentRequest.getFuture().cancel(false);
+                    sentRequest.getTimeoutFuture().cancel(false);
                     this.client.sentRequests.remove(packet.getRequestId());
                 }
             }
@@ -63,13 +62,13 @@ public class IntercomClientHandler<T> extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) {
         // Reconnect
         this.client.connect();
     }
