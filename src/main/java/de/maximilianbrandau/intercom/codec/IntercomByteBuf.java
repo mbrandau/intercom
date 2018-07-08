@@ -53,9 +53,9 @@ public class IntercomByteBuf extends ByteBuf {
     }
 
     public String readUtf8() {
-        int l = this.readVarInt();
-        if (l == -1) return null;
-        byte[] bytes = new byte[l];
+        int length = this.readVarInt();
+        if (length == -1) return null;
+        byte[] bytes = new byte[length];
         this.readBytes(bytes);
         return new String(bytes, CharsetUtil.UTF_8);
     }
