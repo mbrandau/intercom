@@ -15,7 +15,7 @@ public class IntercomTest {
 
     @Test
     public void simpleCommunicationTest() throws CertificateException, SSLException, InterruptedException, ExecutionException {
-        IntercomCodec<Integer[]> integerIntercomCodec = new IntercomCodec<Integer[]>() {
+        IntercomCodec<Integer[]> integerIntercomCodec = new IntercomCodec<>() {
             @Override
             public void encode(Integer[] data, IntercomByteBuf buffer) {
                 buffer.writeVarInt(data.length);
