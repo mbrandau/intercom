@@ -7,9 +7,11 @@ import de.maximilianbrandau.intercom.codec.PacketType;
 public class PushPacket extends IntercomPacket {
 
     private String event;
+    private IntercomByteBuf data;
 
-    public PushPacket(String event) {
+    public PushPacket(String event, IntercomByteBuf data) {
         this.event = event;
+        this.data = data;
     }
 
     public PushPacket() {
@@ -17,6 +19,10 @@ public class PushPacket extends IntercomPacket {
 
     public String getEvent() {
         return event;
+    }
+
+    public IntercomByteBuf getData() {
+        return data;
     }
 
     @Override
@@ -27,11 +33,14 @@ public class PushPacket extends IntercomPacket {
     @Override
     public void encode(IntercomByteBuf byteBuffer) {
         byteBuffer.writeUtf8(event);
+        byteBuffer.writeInt(data.writerIndex());
+        byteBuffer.writeBytes(data);
     }
 
     @Override
     public void decode(IntercomByteBuf byteBuffer) {
         event = byteBuffer.readUtf8();
+        data = new IntercomByteBuf(byteBuffer.readRetainedSlice(byteBuffer.readInt()));
     }
 
 }

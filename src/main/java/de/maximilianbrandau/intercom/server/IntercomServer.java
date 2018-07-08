@@ -2,10 +2,12 @@ package de.maximilianbrandau.intercom.server;
 
 import de.maximilianbrandau.intercom.AlreadyClosedException;
 import de.maximilianbrandau.intercom.AuthenticationHandler;
+import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
 import de.maximilianbrandau.intercom.codec.IntercomCodec;
 import de.maximilianbrandau.intercom.codec.NettyCodec;
 import de.maximilianbrandau.intercom.codec.packets.PushPacket;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
@@ -92,9 +94,13 @@ public class IntercomServer<T> {
         return closed;
     }
 
-    public void push(String event) {
+    public void push(String event, T data) {
         if (isClosed()) throw new AlreadyClosedException("Server");
-        this.channel.writeAndFlush(new PushPacket(event));
+
+        IntercomByteBuf dataBuffer = new IntercomByteBuf(Unpooled.buffer());
+        this.intercomCodec.encode(data, dataBuffer);
+
+        this.channel.writeAndFlush(new PushPacket(event, dataBuffer));
     }
 
     public void addHandler(String event, IntercomRequestHandler<T> requestHandler) {
