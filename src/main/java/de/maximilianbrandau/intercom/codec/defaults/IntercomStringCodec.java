@@ -3,7 +3,7 @@ package de.maximilianbrandau.intercom.codec.defaults;
 import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
 import de.maximilianbrandau.intercom.codec.IntercomCodec;
 
-public class IntercomStringCodec extends IntercomCodec<String> {
+public class IntercomStringCodec implements IntercomCodec<String> {
 
     @Override
     public void encode(String data, IntercomByteBuf buffer) {
