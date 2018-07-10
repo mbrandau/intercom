@@ -1,9 +1,6 @@
 package de.maximilianbrandau.intercom.client;
 
-import de.maximilianbrandau.intercom.AlreadyClosedException;
-import de.maximilianbrandau.intercom.IntercomRequestHandler;
-import de.maximilianbrandau.intercom.RequestFactory;
-import de.maximilianbrandau.intercom.RequestHandlerRegistry;
+import de.maximilianbrandau.intercom.*;
 import de.maximilianbrandau.intercom.authentication.AuthenticationResult;
 import de.maximilianbrandau.intercom.authentication.Authenticator;
 import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
@@ -54,6 +51,7 @@ public class IntercomClient<T, A> {
     private Channel channel;
     private boolean closed = false;
     private CompletableFuture<AuthenticationResult> authenticationResultCompletableFuture;
+    private boolean closing = false;
 
     /**
      * @param host                Host of the server to connect to
@@ -61,7 +59,7 @@ public class IntercomClient<T, A> {
      * @param sslContext          {@link SslContext} to use
      * @param requestTimeout      Default request timeout in milliseconds
      * @param authenticator       {@link Authenticator} to use for authentication at the server
-     * @param eventHandler        Handles incoming {@link de.maximilianbrandau.intercom.Event}s from the server
+     * @param eventHandler        Handles incoming {@link Event}s from the server
      * @param codec               Encodes/decodes request and event data
      * @param authenticationCodec Encodes/decodes authentication data
      */
@@ -135,14 +133,9 @@ public class IntercomClient<T, A> {
 
     public void close() {
         if (isClosed()) throw new AlreadyClosedException("Client");
-        if (channelFuture != null)
-            try {
-                channelFuture.channel().close().channel().closeFuture().sync();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        this.eventLoopGroup.shutdownGracefully();
-        closed = false;
+        this.closing = true;
+        this.eventLoopGroup.shutdownGracefully().awaitUninterruptibly();
+        this.closed = true;
     }
 
     public boolean isClosed() {
@@ -180,6 +173,10 @@ public class IntercomClient<T, A> {
 
     public RequestHandlerRegistry<T> getRequestHandlerRegistry() {
         return requestHandlerRegistry;
+    }
+
+    public boolean isClosing() {
+        return closing;
     }
 
     public static class Builder<T, A> {

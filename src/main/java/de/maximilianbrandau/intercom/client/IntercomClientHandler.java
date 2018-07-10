@@ -74,7 +74,7 @@ public class IntercomClientHandler<T, A> extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         // Reconnect
-        this.client.connect();
+        if (!this.client.isClosing() && !this.client.isClosed()) this.client.connect();
     }
 
 }
