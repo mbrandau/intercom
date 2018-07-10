@@ -7,3 +7,5 @@ jdk:
   - openjdk9
   - openjdk10
   - openjdk11
+after_success:
+  - mvn clean test jacoco:report coveralls:report

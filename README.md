@@ -1,4 +1,4 @@
-# intercom ![Maven Central](https://img.shields.io/maven-central/v/de.maximilianbrandau/intercom.svg) [![Build Status](https://img.shields.io/travis/mbrandau/intercom.svg)](https://travis-ci.org/mbrandau/intercom)
+# intercom ![Maven Central](https://img.shields.io/maven-central/v/de.maximilianbrandau/intercom.svg) [![Build Status](https://img.shields.io/travis/mbrandau/intercom.svg)](https://travis-ci.org/mbrandau/intercom) [![Coverage Status](https://coveralls.io/repos/github/mbrandau/intercom/badge.svg?branch=master)](https://coveralls.io/github/mbrandau/intercom?branch=master)
 
 Intercom is a simple library that aims to simplify communication between your services.
 
