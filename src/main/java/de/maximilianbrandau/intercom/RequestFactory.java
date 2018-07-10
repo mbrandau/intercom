@@ -70,7 +70,7 @@ public class RequestFactory<T> {
         private final Channel channel;
         private final String route;
         private final CompletableFuture<Response<T>> future;
-        private long requestTimeout = -1;
+        private long requestTimeout = RequestFactory.this.requestTimeout;
         private T data;
 
         private Builder(RequestFactory<T> requestFactory, String route, Channel channel) {
