@@ -20,15 +20,16 @@ public class BasicCommunicationTest {
 
     private IntercomServer<String, ?, Client> server;
     private IntercomClient<String, ?> client;
-    private CompletableFuture<Event<String>> completableFuture = new CompletableFuture<>();
+    private CompletableFuture<Event<String>> completableFuture;
 
     @Before
     public void setUp() {
         IntercomCodec<String> codec = new IntercomStringCodec();
-
-        server = Intercom.server(8080, codec, null).build(new DefaultClientInitializer<>());
+        completableFuture = new CompletableFuture<>();
+        server = Intercom.server(codec, null).build(new DefaultClientInitializer<>());
+        System.out.printf("Listening on port %d\n", server.getPort());
         client = Intercom
-                .client("localhost", 8080, codec, null)
+                .client("localhost", server.getPort(), codec, null)
                 .eventHandler(event -> completableFuture.complete(event))
                 .build();
     }

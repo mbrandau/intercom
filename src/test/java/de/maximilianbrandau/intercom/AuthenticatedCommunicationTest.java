@@ -20,7 +20,6 @@ import java.util.concurrent.TimeoutException;
 
 public class AuthenticatedCommunicationTest {
 
-    private static final int PORT = 8080;
     private static final String HOST = "localhost";
 
     private IntercomCodec<String> codec;
@@ -35,14 +34,14 @@ public class AuthenticatedCommunicationTest {
         final String password = "helloworld";
 
         server = Intercom
-                .server(PORT, codec, codec)
+                .server(codec, codec)
                 .authenticationHandler(authenticationData ->
                         authenticationData.equals(password) ? AuthenticationResult.success() : AuthenticationResult.failure("Wrong password")
                 )
                 .build(new DefaultClientInitializer<>());
-
+        System.out.printf("Listening on port %d\n", server.getPort());
         clientWithCorrectPassword = Intercom
-                .client(HOST, PORT, codec, codec)
+                .client(HOST, server.getPort(), codec, codec)
                 .authenticator(new Authenticator<>() {
                     @Override
                     public String authenticate() {
@@ -61,7 +60,7 @@ public class AuthenticatedCommunicationTest {
     @Test
     public void shouldFailOnWrongPassword() {
         IntercomClient<String, String> client = Intercom
-                .client(HOST, PORT, codec, codec)
+                .client(HOST, server.getPort(), codec, codec)
                 .authenticator(new Authenticator<>() {
                     @Override
                     public String authenticate() {
