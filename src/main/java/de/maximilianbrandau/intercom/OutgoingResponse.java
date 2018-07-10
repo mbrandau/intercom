@@ -1,25 +1,26 @@
-package de.maximilianbrandau.intercom.server;
+package de.maximilianbrandau.intercom;
 
 import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
+import de.maximilianbrandau.intercom.codec.IntercomCodec;
 import de.maximilianbrandau.intercom.codec.packets.ResponsePacket;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 
-public class IntercomResponse<T> {
+public class OutgoingResponse<T> {
 
-    private final IntercomServer<T> server;
+    private final IntercomCodec<T> codec;
     private final ChannelHandlerContext ctx;
-    private final IntercomRequest<T> request;
+    private final Request<T> request;
     private short status = 200;
     private T data;
 
-    public IntercomResponse(IntercomServer<T> server, ChannelHandlerContext ctx, IntercomRequest<T> request) {
-        this.server = server;
+    public OutgoingResponse(IntercomCodec<T> codec, ChannelHandlerContext ctx, Request<T> request) {
+        this.codec = codec;
         this.ctx = ctx;
         this.request = request;
     }
 
-    public IntercomRequest<T> getRequest() {
+    public Request<T> getRequest() {
         return request;
     }
 
@@ -41,7 +42,7 @@ public class IntercomResponse<T> {
 
     public void end() {
         IntercomByteBuf dataBuffer = new IntercomByteBuf(Unpooled.buffer());
-        this.server.intercomCodec.encode(getData(), dataBuffer);
+        this.codec.encode(getData(), dataBuffer);
         ctx.writeAndFlush(new ResponsePacket(getRequest().getRequestId(), status, dataBuffer));
     }
 

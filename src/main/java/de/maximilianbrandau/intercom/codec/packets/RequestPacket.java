@@ -6,25 +6,25 @@ import de.maximilianbrandau.intercom.codec.PacketType;
 
 public class RequestPacket extends IntercomPacket {
 
-    private String requestId;
-    private String event;
+    private int requestId;
+    private String route;
     private IntercomByteBuf data;
 
-    public RequestPacket(String requestId, String event, IntercomByteBuf data) {
+    public RequestPacket(int requestId, String route, IntercomByteBuf data) {
         this.requestId = requestId;
-        this.event = event;
+        this.route = route;
         this.data = data;
     }
 
     public RequestPacket() {
     }
 
-    public String getRequestId() {
+    public int getRequestId() {
         return requestId;
     }
 
-    public String getEvent() {
-        return event;
+    public String getRoute() {
+        return route;
     }
 
     public IntercomByteBuf getData() {
@@ -38,16 +38,16 @@ public class RequestPacket extends IntercomPacket {
 
     @Override
     public void encode(IntercomByteBuf byteBuffer) {
-        byteBuffer.writeUtf8(requestId);
-        byteBuffer.writeUtf8(event);
+        byteBuffer.writeVarInt(requestId);
+        byteBuffer.writeUtf8(route);
         byteBuffer.writeInt(data.writerIndex());
         byteBuffer.writeBytes(data);
     }
 
     @Override
     public void decode(IntercomByteBuf byteBuffer) {
-        requestId = byteBuffer.readUtf8();
-        event = byteBuffer.readUtf8();
+        requestId = byteBuffer.readVarInt();
+        route = byteBuffer.readUtf8();
         data = new IntercomByteBuf(byteBuffer.readRetainedSlice(byteBuffer.readInt()));
     }
 

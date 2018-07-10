@@ -26,8 +26,8 @@ public class ByteBufTest {
         };
         IntercomByteBuf byteBuf = new IntercomByteBuf(Unpooled.buffer(5));
         for (int anA : a) {
-            byteBuf.resetWriterIndex();
             byteBuf.resetReaderIndex();
+            byteBuf.resetWriterIndex();
             byteBuf.writeVarInt(anA);
             Assert.assertEquals(anA, byteBuf.readVarInt());
         }
@@ -40,8 +40,8 @@ public class ByteBufTest {
         byteBuf.writeUtf8(s);
         Assert.assertEquals(s, byteBuf.readUtf8());
 
-        byteBuf.resetWriterIndex();
         byteBuf.resetReaderIndex();
+        byteBuf.resetWriterIndex();
         byteBuf.writeUtf8(null);
         Assert.assertNull(byteBuf.readUtf8());
     }

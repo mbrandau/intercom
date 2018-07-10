@@ -1,12 +1,12 @@
-package de.maximilianbrandau.intercom.client;
+package de.maximilianbrandau.intercom;
 
-public class IntercomResponse<T> {
+public class Response<T> {
 
     private final short status;
     private final T data;
-    private long duration;
+    private final long duration;
 
-    IntercomResponse(short status, long duration, T data) {
+    Response(short status, long duration, T data) {
         this.status = status;
         this.duration = duration;
         this.data = data;

@@ -6,11 +6,11 @@ import de.maximilianbrandau.intercom.codec.PacketType;
 
 public class ResponsePacket extends IntercomPacket {
 
-    private String requestId;
+    private int requestId;
     private short status;
     private IntercomByteBuf data;
 
-    public ResponsePacket(String requestId, short status, IntercomByteBuf data) {
+    public ResponsePacket(int requestId, short status, IntercomByteBuf data) {
         this.requestId = requestId;
         this.status = status;
         this.data = data;
@@ -19,7 +19,7 @@ public class ResponsePacket extends IntercomPacket {
     public ResponsePacket() {
     }
 
-    public String getRequestId() {
+    public int getRequestId() {
         return requestId;
     }
 
@@ -38,7 +38,7 @@ public class ResponsePacket extends IntercomPacket {
 
     @Override
     public void encode(IntercomByteBuf byteBuffer) {
-        byteBuffer.writeUtf8(requestId);
+        byteBuffer.writeVarInt(requestId);
         byteBuffer.writeShort(status);
         byteBuffer.writeInt(data.writerIndex());
         byteBuffer.writeBytes(data);
@@ -46,7 +46,7 @@ public class ResponsePacket extends IntercomPacket {
 
     @Override
     public void decode(IntercomByteBuf byteBuffer) {
-        requestId = byteBuffer.readUtf8();
+        requestId = byteBuffer.readVarInt();
         status = byteBuffer.readShort();
         data = new IntercomByteBuf(byteBuffer.readRetainedSlice(byteBuffer.readInt()));
     }

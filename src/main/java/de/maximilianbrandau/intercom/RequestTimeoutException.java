@@ -1,4 +1,4 @@
-package de.maximilianbrandau.intercom.client;
+package de.maximilianbrandau.intercom;
 
 public class RequestTimeoutException extends RuntimeException {
 

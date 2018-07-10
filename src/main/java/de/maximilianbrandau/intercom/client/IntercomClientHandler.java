@@ -1,22 +1,26 @@
 package de.maximilianbrandau.intercom.client;
 
-import de.maximilianbrandau.intercom.codec.packets.AuthResponsePacket;
-import de.maximilianbrandau.intercom.codec.packets.PingPacket;
-import de.maximilianbrandau.intercom.codec.packets.PushPacket;
-import de.maximilianbrandau.intercom.codec.packets.ResponsePacket;
+import de.maximilianbrandau.intercom.Event;
+import de.maximilianbrandau.intercom.IntercomRequestHandler;
+import de.maximilianbrandau.intercom.OutgoingResponse;
+import de.maximilianbrandau.intercom.Request;
+import de.maximilianbrandau.intercom.codec.packets.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
-public class IntercomClientHandler<T> extends ChannelInboundHandlerAdapter {
+public class IntercomClientHandler<T, A> extends ChannelInboundHandlerAdapter {
 
     private static final long PING_DELAY = 5000;
 
-    private final IntercomClient<T> client;
+    private final IntercomClient<T, A> client;
+    private final EventHandler<T> eventHandler;
 
-    public IntercomClientHandler(IntercomClient<T> client) {
+    public IntercomClientHandler(IntercomClient<T, A> client, EventHandler<T> eventHandler) {
         this.client = client;
+        this.eventHandler = eventHandler;
     }
 
     @Override
@@ -29,35 +33,35 @@ public class IntercomClientHandler<T> extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         long receiveTime = System.currentTimeMillis();
         if (msg instanceof AuthResponsePacket) {
-
-        }
-        if (msg instanceof PingPacket) { // Pong
+            this.client.handleAuthenticationResponse((AuthResponsePacket) msg);
+        } else if (msg instanceof PingPacket) { // Pong
             // Set ping property
             this.client.ping = (int) (System.currentTimeMillis() - ((PingPacket) msg).getStartTime());
             // Schedule next ping
             this.client.eventLoopGroup.schedule(this.client::ping, PING_DELAY, TimeUnit.MILLISECONDS);
-        }
-        if (msg instanceof ResponsePacket) {
+        } else if (msg instanceof ResponsePacket) {
             ResponsePacket packet = (ResponsePacket) msg;
-            SentRequest<T> sentRequest = this.client.sentRequests.get(packet.getRequestId());
-            if (sentRequest != null) {
-                try {
-                    IntercomResponse<T> response = new IntercomResponse<>(
-                            packet.getStatus(),
-                            receiveTime - sentRequest.getStartTime(),
-                            this.client.intercomCodec.decode(packet.getData())
-                    );
-                    sentRequest.getFuture().complete(response);
-                } catch (Throwable t) {
-                    sentRequest.getFuture().completeExceptionally(t);
-                } finally {
-                    sentRequest.getTimeoutFuture().cancel(false);
-                    this.client.sentRequests.remove(packet.getRequestId());
-                }
-            }
-        }
-        if (msg instanceof PushPacket) {
+            this.client.getRequestFactory().handleResponse(packet, receiveTime);
+        } else if (msg instanceof PushPacket) {
             PushPacket packet = (PushPacket) msg;
+            T data = this.client.codec.decode(packet.getData());
+            this.eventHandler.handleEvent(new Event<>(packet.getEvent(), data));
+        } else if (msg instanceof RequestPacket) {
+            RequestPacket packet = (RequestPacket) msg;
+            IntercomRequestHandler<T> handler = this.client.getRequestHandlerRegistry().getHandlerOrDefault(packet.getRoute());
+            if (handler != null) {
+                Request<T> request = new Request<>(
+                        System.currentTimeMillis(),
+                        (InetSocketAddress) ctx.channel().remoteAddress(),
+                        this.client.authenticationResult,
+                        packet.getRequestId(),
+                        packet.getRoute(),
+                        this.client.codec.decode(packet.getData())
+                );
+                OutgoingResponse<T> response = new OutgoingResponse<>(this.client.codec, ctx, request);
+
+                handler.handleRequest(request, response);
+            }
         }
     }
 

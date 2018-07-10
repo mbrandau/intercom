@@ -1,20 +1,22 @@
-package de.maximilianbrandau.intercom.server;
+package de.maximilianbrandau.intercom;
+
+import de.maximilianbrandau.intercom.authentication.AuthenticationResult;
 
 import java.net.InetSocketAddress;
 
-public class IntercomRequest<T> {
+public class Request<T> {
 
     private final long receiveTime;
     private final InetSocketAddress address;
-    private final boolean authenticated;
-    private final String requestId;
+    private final AuthenticationResult authenticationResult;
+    private final int requestId;
     private final String event;
     private final T data;
 
-    IntercomRequest(long receiveTime, InetSocketAddress address, boolean authenticated, String requestId, String event, T data) {
+    public Request(long receiveTime, InetSocketAddress address, AuthenticationResult authenticationResult, int requestId, String event, T data) {
         this.receiveTime = receiveTime;
         this.address = address;
-        this.authenticated = authenticated;
+        this.authenticationResult = authenticationResult;
         this.requestId = requestId;
         this.event = event;
         this.data = data;
@@ -28,11 +30,11 @@ public class IntercomRequest<T> {
         return address;
     }
 
-    public boolean isAuthenticated() {
-        return authenticated;
+    public AuthenticationResult getAuthenticationResult() {
+        return authenticationResult;
     }
 
-    public String getRequestId() {
+    public int getRequestId() {
         return requestId;
     }
 

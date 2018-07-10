@@ -3,23 +3,20 @@ package de.maximilianbrandau.intercom.codec.packets;
 import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
 import de.maximilianbrandau.intercom.codec.IntercomPacket;
 import de.maximilianbrandau.intercom.codec.PacketType;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 public class AuthPacket extends IntercomPacket {
 
-    private final ByteBuf buffer;
+    private IntercomByteBuf data;
 
-    public AuthPacket(ByteBuf buffer) {
-        this.buffer = buffer;
+    public AuthPacket(IntercomByteBuf data) {
+        this.data = data;
     }
 
     public AuthPacket() {
-        this.buffer = Unpooled.buffer();
     }
 
-    public ByteBuf getBuffer() {
-        return buffer;
+    public IntercomByteBuf getData() {
+        return data;
     }
 
     @Override
@@ -29,13 +26,13 @@ public class AuthPacket extends IntercomPacket {
 
     @Override
     public void encode(IntercomByteBuf byteBuffer) {
-        byteBuffer.writeInt(buffer.writerIndex());
-        byteBuffer.writeBytes(buffer);
+        byteBuffer.writeInt(data.writerIndex());
+        byteBuffer.writeBytes(data);
     }
 
     @Override
     public void decode(IntercomByteBuf byteBuffer) {
-        buffer.readBytes(byteBuffer, byteBuffer.readInt());
+        data = new IntercomByteBuf(byteBuffer.readRetainedSlice(byteBuffer.readInt()));
     }
 
 }

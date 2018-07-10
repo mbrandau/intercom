@@ -1,41 +1,38 @@
 package de.maximilianbrandau.intercom.codec.packets;
 
+import de.maximilianbrandau.intercom.authentication.AuthenticationResult;
 import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
 import de.maximilianbrandau.intercom.codec.IntercomPacket;
 import de.maximilianbrandau.intercom.codec.PacketType;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 public class AuthResponsePacket extends IntercomPacket {
 
-    private final ByteBuf buffer;
+    private AuthenticationResult result;
 
-    public AuthResponsePacket(ByteBuf buffer) {
-        this.buffer = buffer;
+    public AuthResponsePacket(AuthenticationResult result) {
+        this.result = result;
     }
 
     public AuthResponsePacket() {
-        this.buffer = Unpooled.buffer();
     }
 
-    public ByteBuf getBuffer() {
-        return buffer;
+    public AuthenticationResult getResult() {
+        return result;
     }
 
     @Override
     public PacketType getPacketType() {
-        return PacketType.AUTH;
+        return PacketType.AUTH_RESPONSE;
     }
 
     @Override
     public void encode(IntercomByteBuf byteBuffer) {
-        byteBuffer.writeInt(buffer.writerIndex());
-        byteBuffer.writeBytes(buffer);
+        byteBuffer.writeUtf8(getResult().getError());
     }
 
     @Override
     public void decode(IntercomByteBuf byteBuffer) {
-        buffer.readBytes(byteBuffer, byteBuffer.readInt());
+        this.result = AuthenticationResult.failure(byteBuffer.readUtf8());
     }
 
 }
