@@ -9,7 +9,6 @@ import de.maximilianbrandau.intercom.server.Client;
 import de.maximilianbrandau.intercom.server.DefaultClientInitializer;
 import de.maximilianbrandau.intercom.server.IntercomServer;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,6 +16,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static org.junit.Assert.*;
 
 public class AuthenticatedCommunicationTest {
 
@@ -50,7 +51,7 @@ public class AuthenticatedCommunicationTest {
 
                     @Override
                     public void handleAuthenticationResult(AuthenticationResult result) {
-
+                        assertTrue(result.isSuccess());
                     }
                 })
                 .eventHandler(event -> completableFuture.complete(event))
@@ -69,8 +70,8 @@ public class AuthenticatedCommunicationTest {
 
                     @Override
                     public void handleAuthenticationResult(AuthenticationResult result) {
-                        if (result.isSuccess()) Assert.fail("Authentication should fail");
-                        else System.out.println(result.getError());
+                        assertFalse(result.isSuccess());
+                        assertEquals("Wrong password", result.getError());
                     }
                 })
                 .build();
@@ -85,15 +86,15 @@ public class AuthenticatedCommunicationTest {
             response.end();
         });
 
-        Assert.assertEquals("TEST", clientWithCorrectPassword.request("toUppercase").data("test").send().get().getData());
+        assertEquals("TEST", clientWithCorrectPassword.request("toUppercase").data("test").send().get().getData());
     }
 
     @Test
     public void pushEventHandler() throws InterruptedException, ExecutionException, TimeoutException {
         server.pushEvent(new Event<>("test", "Hello World!"));
         Event<String> event = completableFuture.get(1, TimeUnit.SECONDS);
-        Assert.assertEquals("test", event.getEvent());
-        Assert.assertEquals("Hello World!", event.getData());
+        assertEquals("test", event.getEvent());
+        assertEquals("Hello World!", event.getData());
     }
 
     @After
