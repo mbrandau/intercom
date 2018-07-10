@@ -20,11 +20,13 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.security.cert.CertificateException;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,15 +40,15 @@ public class IntercomServer<T, A, C extends Client> {
     final EventLoopGroup workerGroup;
     private final RequestHandlerRegistry<T> requestHandlerRegistry;
     private final String host;
-    private final int port;
-
     private final ChannelFuture channelFuture;
     private final SslContext sslContext;
     private final ChannelGroup channels;
+    private int port;
     private EventLoopGroup bossGroup;
     private boolean closed = false;
 
     private LinkedList<C> clients;
+    private boolean closing = false;
 
     private IntercomServer(String host, int port, SslContext sslContext, IntercomRequestHandler<T> defaultRequestHandler, AuthenticationHandler<A> authenticationHandler, IntercomCodec<T> codec, IntercomCodec<A> authenticationCodec, long requestTimeout, ClientInitializer<T, A, C> clientInitializer) {
         this.host = host;
@@ -89,11 +91,12 @@ public class IntercomServer<T, A, C extends Client> {
         if (this.host == null) bindFuture = b.bind(port);
         else bindFuture = b.bind(this.host, port);
         try {
-            bindFuture = bindFuture.sync();
+            bindFuture = bindFuture.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         Channel channel = bindFuture.channel();
+        this.port = ((InetSocketAddress) channel.localAddress()).getPort();
         this.channelFuture = bindFuture.channel().closeFuture();
     }
 
@@ -111,10 +114,11 @@ public class IntercomServer<T, A, C extends Client> {
 
     public void close() {
         if (isClosed()) throw new AlreadyClosedException("Server");
-        if (this.channelFuture != null)
-            this.channelFuture.channel().close().channel().closeFuture();
-        this.bossGroup.shutdownGracefully();
-        this.workerGroup.shutdownGracefully();
+        this.closing = true;
+        Future bossGroupFuture = this.bossGroup.shutdownGracefully();
+        Future workerGroupFuture = this.workerGroup.shutdownGracefully();
+        bossGroupFuture.awaitUninterruptibly();
+        workerGroupFuture.awaitUninterruptibly();
         this.closed = true;
     }
 
@@ -140,12 +144,16 @@ public class IntercomServer<T, A, C extends Client> {
         return requestHandlerRegistry;
     }
 
+    public boolean isClosing() {
+        return closing;
+    }
+
     public static class Builder<T, A> {
 
-        private final int port;
         private final IntercomCodec<T> codec;
         private final IntercomCodec<A> authenticationCodec;
 
+        private int port = 0;
         private String host = null;
         private SslContext sslContext;
         private long requestTimeout = 30000;
@@ -155,14 +163,23 @@ public class IntercomServer<T, A, C extends Client> {
         /**
          * Creates a {@link Builder} for an {@link IntercomServer}.
          *
-         * @param port                The port the server should listen to.
          * @param codec               The {@link IntercomCodec} to encode and decode request and pushEvent event data
          * @param authenticationCodec The {@link IntercomCodec} to encode and decode authentication data. Only required if an {@link AuthenticationHandler} is then set via {@code Builder.authenticationHandler(handler)}.
          */
-        public Builder(int port, IntercomCodec<T> codec, @Nullable IntercomCodec<A> authenticationCodec) {
-            this.port = port;
+        public Builder(IntercomCodec<T> codec, @Nullable IntercomCodec<A> authenticationCodec) {
             this.codec = codec;
             this.authenticationCodec = authenticationCodec;
+        }
+
+        /**
+         * Sets the port for the server to listen on.
+         *
+         * @param port The port the server should listen on
+         * @return Returns this {@link Builder}
+         */
+        public Builder<T, A> port(int port) {
+            this.port = port;
+            return this;
         }
 
         /**
@@ -269,7 +286,8 @@ public class IntercomServer<T, A, C extends Client> {
          * @throws SSLException
          */
         public Builder<T, A> copy() throws SSLException {
-            return new Builder<>(port, codec, authenticationCodec)
+            return new Builder<>(codec, authenticationCodec)
+                    .port(this.port)
                     .host(this.host)
                     .ssl(this.sslContext)
                     .defaultRequestHandler(this.routeNotFoundHandler)
