@@ -1,6 +1,4 @@
-# intercom ![Maven Central](https://img.shields.io/maven-central/v/de.maximilianbrandau/intercom.svg) ![Travis](https://img.shields.io/travis/mbrandau/intercom.svg)
-
-
+# intercom ![Maven Central](https://img.shields.io/maven-central/v/de.maximilianbrandau/intercom.svg) [![Build Status](https://img.shields.io/travis/mbrandau/intercom.svg)](https://travis-ci.org/mbrandau/intercom)
 
 Intercom is a simple library that aims to simplify communication between your services.
 
