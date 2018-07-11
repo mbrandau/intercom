@@ -21,14 +21,10 @@
  *
  */
 
-package de.maximilianbrandau.intercom.codec;
+package de.maximilianbrandau.intercom.requests;
 
-public abstract class IntercomPacket {
+public interface IntercomRequestHandler<T> {
 
-    public abstract PacketType getPacketType();
-
-    public abstract void encode(IntercomByteBuf byteBuffer);
-
-    public abstract void decode(IntercomByteBuf byteBuffer);
+    void handleRequest(Request<T> request, OutgoingResponse<T> response);
 
 }

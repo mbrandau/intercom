@@ -21,14 +21,15 @@
  *
  */
 
-package de.maximilianbrandau.intercom.codec;
+package de.maximilianbrandau.intercom.requests;
 
-public abstract class IntercomPacket {
+public class RequestTimeoutException extends RuntimeException {
 
-    public abstract PacketType getPacketType();
+    public RequestTimeoutException() {
+        super("Request timed out");
+    }
 
-    public abstract void encode(IntercomByteBuf byteBuffer);
-
-    public abstract void decode(IntercomByteBuf byteBuffer);
-
+    public RequestTimeoutException(long time) {
+        super("Request timed out after " + ((double) time / 1000.0) + " seconds");
+    }
 }

@@ -1,4 +1,27 @@
-package de.maximilianbrandau.intercom;
+/*
+ * Copyright (c) 2017-2018 Maximilian Brandau
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
+package de.maximilianbrandau.intercom.requests;
 
 import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
 import de.maximilianbrandau.intercom.codec.IntercomCodec;
@@ -80,16 +103,34 @@ public class RequestFactory<T> {
             this.future = new CompletableFuture<>();
         }
 
+        /**
+         * Sets the request data that will be send to the specified route
+         *
+         * @param data Request data
+         * @return Returns this {@link Builder}
+         */
         public Builder data(T data) {
             this.data = data;
             return this;
         }
 
-        public Builder requestTimeout(long timeout) {
-            this.requestTimeout = timeout;
+        /**
+         * Sets the request timeout to use. If not specified the default request timeout of the {@link de.maximilianbrandau.intercom.client.IntercomClient}/{@link de.maximilianbrandau.intercom.server.IntercomServer} will be used.
+         *
+         * @param timeout  Request timeout
+         * @param timeUnit {@link TimeUnit} of the given request timeout
+         * @return Returns this {@link Builder}
+         */
+        public Builder requestTimeout(long timeout, TimeUnit timeUnit) {
+            this.requestTimeout = timeUnit.toMillis(timeout);
             return this;
         }
 
+        /**
+         * Sends the request
+         *
+         * @return {@link CompletableFuture} that completes when a {@link Response} was received or that completes exceptionally when the request timed out.
+         */
         public CompletableFuture<Response<T>> send() {
             int requestId = this.requestFactory.requestId();
             ScheduledFuture timeoutFuture = requestFactory.eventLoopGroup.schedule(() -> {

@@ -21,14 +21,46 @@
  *
  */
 
-package de.maximilianbrandau.intercom.codec;
+package de.maximilianbrandau.intercom.requests;
 
-public abstract class IntercomPacket {
+import io.netty.util.concurrent.ScheduledFuture;
 
-    public abstract PacketType getPacketType();
+import java.util.concurrent.CompletableFuture;
 
-    public abstract void encode(IntercomByteBuf byteBuffer);
+public class SentRequest<T> {
 
-    public abstract void decode(IntercomByteBuf byteBuffer);
+    private final long startTime;
+    private final int requestId;
+    private final T data;
+    private final ScheduledFuture timeoutFuture;
+    private final CompletableFuture<Response<T>> future;
+
+    SentRequest(long startTime, int requestId, T data, ScheduledFuture timeoutFuture, CompletableFuture<Response<T>> future) {
+        this.startTime = startTime;
+        this.requestId = requestId;
+        this.data = data;
+        this.timeoutFuture = timeoutFuture;
+        this.future = future;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public int getRequestId() {
+        return requestId;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    ScheduledFuture getTimeoutFuture() {
+        return timeoutFuture;
+    }
+
+    public CompletableFuture<Response<T>> getFuture() {
+        return future;
+    }
 
 }

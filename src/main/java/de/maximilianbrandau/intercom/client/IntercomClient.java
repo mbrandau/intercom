@@ -1,6 +1,30 @@
+/*
+ * Copyright (c) 2017-2018 Maximilian Brandau
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 package de.maximilianbrandau.intercom.client;
 
-import de.maximilianbrandau.intercom.*;
+import de.maximilianbrandau.intercom.AlreadyClosedException;
+import de.maximilianbrandau.intercom.Event;
 import de.maximilianbrandau.intercom.authentication.AuthenticationResult;
 import de.maximilianbrandau.intercom.authentication.Authenticator;
 import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
@@ -9,6 +33,9 @@ import de.maximilianbrandau.intercom.codec.NettyCodec;
 import de.maximilianbrandau.intercom.codec.packets.AuthPacket;
 import de.maximilianbrandau.intercom.codec.packets.AuthResponsePacket;
 import de.maximilianbrandau.intercom.codec.packets.PingPacket;
+import de.maximilianbrandau.intercom.requests.IntercomRequestHandler;
+import de.maximilianbrandau.intercom.requests.RequestFactory;
+import de.maximilianbrandau.intercom.requests.RequestHandlerRegistry;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -100,7 +127,7 @@ public class IntercomClient<T, A> {
         connect();
     }
 
-    protected void connect() {
+    void connect() {
         if (isClosed()) throw new RuntimeException("Client is already closed");
         this.authenticationResult = null;
         try {
@@ -153,7 +180,7 @@ public class IntercomClient<T, A> {
 
     void ping() {
         if (isClosed()) throw new AlreadyClosedException("Client");
-        if (this.channel != null)
+        if (this.channel != null && this.channel.isActive())
             this.channel.writeAndFlush(new PingPacket(System.currentTimeMillis(), ping));
     }
 
@@ -161,9 +188,9 @@ public class IntercomClient<T, A> {
         return requestTimeout;
     }
 
-    protected void handleAuthenticationResponse(AuthResponsePacket authResponsePacket) {
-        if (authenticationResultCompletableFuture != null) {
-            authenticationResultCompletableFuture.complete(authResponsePacket.getResult());
+    void handleAuthenticationResponse(AuthResponsePacket authResponsePacket) {
+        if (this.authenticationResultCompletableFuture != null) {
+            this.authenticationResultCompletableFuture.complete(authResponsePacket.getResult());
         }
     }
 
@@ -195,6 +222,12 @@ public class IntercomClient<T, A> {
         private Authenticator<A> authenticator;
         private IntercomRequestHandler<T> defaultRequestHandler;
 
+        /**
+         * @param host                Host to connect to
+         * @param port                Port to connect to
+         * @param codec               {@link IntercomCodec} to encode and decode request and event data
+         * @param authenticationCodec {@link IntercomCodec} to encode and decode authentication data
+         */
         public Builder(String host, int port, IntercomCodec<T> codec, @Nullable IntercomCodec<A> authenticationCodec) {
             this.host = host;
             this.port = port;
@@ -202,38 +235,70 @@ public class IntercomClient<T, A> {
             this.authenticationCodec = authenticationCodec;
         }
 
+        /**
+         * @param sslContext
+         * @return Returns this {@link Builder}
+         * @throws SSLException
+         */
         public Builder<T, A> ssl(SslContext sslContext) throws SSLException {
             if (!sslContext.isClient()) throw new SSLException("SslContext is not a client context");
             this.sslContext = sslContext;
             return this;
         }
 
+        /**
+         * @return Returns this {@link Builder}
+         * @throws SSLException
+         */
         public Builder<T, A> sslInsecureTrustManager() throws SSLException {
             this.sslContext = SslContextBuilder.forClient()
                     .trustManager(InsecureTrustManagerFactory.INSTANCE).build();
             return this;
         }
 
+        /**
+         * @param requestTimeout The clients default request timeout in milliseconds
+         * @return Returns this {@link Builder}
+         */
         public Builder<T, A> requestTimeout(long requestTimeout) {
             this.requestTimeout = requestTimeout;
             return this;
         }
 
+        /**
+         * @param authenticator
+         * @return Returns this {@link Builder}
+         */
         public Builder<T, A> authenticator(Authenticator<A> authenticator) {
             this.authenticator = authenticator;
             return this;
         }
 
+        /**
+         * Sets the default {@link IntercomRequestHandler} to handle requests were no registered handler was found
+         *
+         * @param handler Default {@link IntercomRequestHandler}
+         * @return Returns this {@link Builder}
+         */
         public Builder<T, A> defaultRequestHandler(IntercomRequestHandler<T> handler) {
             this.defaultRequestHandler = handler;
             return this;
         }
 
+        /**
+         * @param eventHandler {@link EventHandler} to handle events pushed from the server
+         * @return Returns this {@link Builder}
+         */
         public Builder<T, A> eventHandler(EventHandler<T> eventHandler) {
             this.eventHandler = eventHandler;
             return this;
         }
 
+        /**
+         * Builds and starts the {@link IntercomClient}
+         *
+         * @return The new {@link Builder}
+         */
         public IntercomClient<T, A> build() {
             return new IntercomClient<>(host, port, sslContext, requestTimeout, authenticator, defaultRequestHandler, eventHandler, codec, authenticationCodec);
         }
@@ -248,6 +313,7 @@ public class IntercomClient<T, A> {
                     .ssl(this.sslContext)
                     .requestTimeout(this.requestTimeout)
                     .authenticator(this.authenticator)
+                    .defaultRequestHandler(this.defaultRequestHandler)
                     .eventHandler(this.eventHandler);
         }
 

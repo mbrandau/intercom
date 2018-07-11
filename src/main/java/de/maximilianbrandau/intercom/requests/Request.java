@@ -21,41 +21,52 @@
  *
  */
 
-package de.maximilianbrandau.intercom.codec.packets;
+package de.maximilianbrandau.intercom.requests;
 
-import de.maximilianbrandau.intercom.codec.IntercomByteBuf;
-import de.maximilianbrandau.intercom.codec.IntercomPacket;
-import de.maximilianbrandau.intercom.codec.PacketType;
+import de.maximilianbrandau.intercom.authentication.AuthenticationResult;
 
-public class AuthPacket extends IntercomPacket {
+import java.net.InetSocketAddress;
 
-    private IntercomByteBuf data;
+public class Request<T> {
 
-    public AuthPacket(IntercomByteBuf data) {
+    private final long receiveTime;
+    private final InetSocketAddress address;
+    private final AuthenticationResult authenticationResult;
+    private final int requestId;
+    private final String event;
+    private final T data;
+
+    public Request(long receiveTime, InetSocketAddress address, AuthenticationResult authenticationResult, int requestId, String event, T data) {
+        this.receiveTime = receiveTime;
+        this.address = address;
+        this.authenticationResult = authenticationResult;
+        this.requestId = requestId;
+        this.event = event;
         this.data = data;
     }
 
-    public AuthPacket() {
+    public long getReceiveTime() {
+        return receiveTime;
     }
 
-    public IntercomByteBuf getData() {
+    public InetSocketAddress getAddress() {
+        return address;
+    }
+
+    public AuthenticationResult getAuthenticationResult() {
+        return authenticationResult;
+    }
+
+    public int getRequestId() {
+        return requestId;
+    }
+
+    public String getEvent() {
+        return event;
+    }
+
+    public T getData() {
         return data;
-    }
-
-    @Override
-    public PacketType getPacketType() {
-        return PacketType.AUTH;
-    }
-
-    @Override
-    public void encode(IntercomByteBuf byteBuffer) {
-        byteBuffer.writeInt(data.writerIndex());
-        byteBuffer.writeBytes(data);
-    }
-
-    @Override
-    public void decode(IntercomByteBuf byteBuffer) {
-        data = new IntercomByteBuf(byteBuffer.readRetainedSlice(byteBuffer.readInt()));
     }
 
 }

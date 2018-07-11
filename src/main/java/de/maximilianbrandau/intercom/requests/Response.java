@@ -21,14 +21,30 @@
  *
  */
 
-package de.maximilianbrandau.intercom.codec;
+package de.maximilianbrandau.intercom.requests;
 
-public abstract class IntercomPacket {
+public class Response<T> {
 
-    public abstract PacketType getPacketType();
+    private final short status;
+    private final T data;
+    private final long duration;
 
-    public abstract void encode(IntercomByteBuf byteBuffer);
+    Response(short status, long duration, T data) {
+        this.status = status;
+        this.duration = duration;
+        this.data = data;
+    }
 
-    public abstract void decode(IntercomByteBuf byteBuffer);
+    public boolean isOk() {
+        return status == 200;
+    }
+
+    public long getDuration() {
+        return duration;
+    }
+
+    public T getData() {
+        return data;
+    }
 
 }
